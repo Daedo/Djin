@@ -630,6 +630,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	
 	//[] () new 
 	Rule ModifiedExpression() {
+		Var<DaedalusExpression> e = new Var<>();
 		return Sequence(
 				FirstOf(
 						DirectExpression(),
@@ -638,6 +639,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 								push(new DaedalusConstuctorCall((DaedalusType) pop()))
 								)
 						),
+				e.set((DaedalusExpression) pop()),
 
 				ZeroOrMore(
 						FirstOf(
