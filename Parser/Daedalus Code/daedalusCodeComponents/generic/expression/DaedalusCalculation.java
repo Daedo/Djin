@@ -17,5 +17,16 @@ public class DaedalusCalculation extends DaedalusExpression {
 	public void addOpeation(DaedalusOperator operator, DaedalusExpression expression) {
 		this.op.add(operator);
 		this.values.add(expression);
+	} 
+	
+	@Override
+	public String toString() {
+		
+		String out = this.values.get(0).toString();
+		for(int i=0;i<this.op.size();i++) {
+			out+= this.op.get(i).toString()+this.values.get(i+1).toString();
+		}
+		
+		return super.toString()+ " "+out;
 	}
 }

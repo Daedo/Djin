@@ -8,4 +8,8 @@ public class DaedalusConditionalCalculation extends DaedalusExpression {
 		this.falseExpr = flExpr;
 	}
 	
+	@Override
+	public String toString() {
+		return super.toString()+"Cond "+this.condition+"? "+this.trueExpr+": "+this.falseExpr;
+	}
 }

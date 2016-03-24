@@ -2,6 +2,8 @@ package daedalusCodeComponents.generic.expression;
 
 import java.util.Vector;
 
+import support.Tools;
+
 public class DaedalusExpressionList extends DaedalusExpression {
 	private Vector<DaedalusExpression> expressions;
 	
@@ -16,15 +18,7 @@ public class DaedalusExpressionList extends DaedalusExpression {
 	
 	@Override
 	public String toString() {
-		String vals = "";
-		
-		for(DaedalusExpression exp:expressions) {
-			if(!vals.equals("")) {
-				vals+=", ";
-			}
-			vals+= exp.toString();
-		}
-		
-		return super.toString()+ " List { "+vals+" }";
+		String vals = Tools.list("{","}",this.expressions);
+		return vals;
 	}
 }

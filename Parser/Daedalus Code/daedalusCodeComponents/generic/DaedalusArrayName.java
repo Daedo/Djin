@@ -3,6 +3,7 @@ package daedalusCodeComponents.generic;
 import java.util.Vector;
 
 import daedalusCodeComponents.generic.type.DaedalusArrayDimension;
+import support.Tools;
 
 public class DaedalusArrayName extends DaedalusName{
 	Vector<DaedalusArrayDimension> dimensions;
@@ -23,11 +24,7 @@ public class DaedalusArrayName extends DaedalusName{
 	
 	@Override
 	public String toString() {
-		String d = "";
-		for(DaedalusArrayDimension dim:this.dimensions) {
-			d+=dim.toString()+" ";
-		}
-		d = d.trim();
+		String d = Tools.list(this.dimensions);
 		return super.toString()+d;
 	}
 }

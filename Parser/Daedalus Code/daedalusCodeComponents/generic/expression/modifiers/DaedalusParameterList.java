@@ -16,4 +16,16 @@ public class DaedalusParameterList extends DaedalusSyntaxElement {
 		this.parameter.add(exp);
 		return true;
 	}
+	
+	@Override
+	public String toString() {
+		String out = "";
+		for(DaedalusExpression p:this.parameter) {
+			if(!out.equals("")) {
+				out+=", ";
+			}
+			out+=p;
+		}
+		return "("+out+")";
+	}
 }

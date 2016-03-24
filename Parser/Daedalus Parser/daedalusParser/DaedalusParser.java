@@ -61,6 +61,7 @@ import daedalusCodeComponents.generic.DaedalusArrayName;
 import daedalusCodeComponents.generic.DaedalusName;
 import daedalusCodeComponents.generic.codeConstruct.DaedalusMethod;
 import daedalusCodeComponents.generic.codeConstruct.DaedalusOperatorOverload;
+import daedalusCodeComponents.generic.expression.DaedalusCall;
 import daedalusCodeComponents.generic.expression.DaedalusExpression;
 import daedalusCodeComponents.generic.expression.DaedalusExpressionList;
 import daedalusCodeComponents.generic.expression.DaedalusOperator;
@@ -68,6 +69,7 @@ import daedalusCodeComponents.generic.expression.leaves.DaedalusConstuctorCall;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLambdaExpression;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLambdaParameter;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLiteral;
+import daedalusCodeComponents.generic.expression.modifiers.DaedalusIndexAcess;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusParameterList;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusSlice;
 import daedalusCodeComponents.generic.type.DaedalusArrayDimension;
@@ -631,6 +633,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	//[] () new 
 	Rule ModifiedExpression() {
 		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusIndexAcess> ia = new Var<>();
 		Var<DaedalusExpression> orginal = new Var<>();
 		return Sequence(
 				FirstOf(
@@ -645,8 +648,17 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				
 				ZeroOrMore(
 						FirstOf(
-								DimSlice(),
-								Call()
+								Sequence(
+										DimSlice(),
+										ia.set((DaedalusIndexAcess) pop()),
+										ia.get().setIndex(e.get()),
+										e.set(ia.getAndClear())
+										),
+								
+								Sequence(
+										Call(),
+										e.set(new DaedalusCall(e.get(),(DaedalusParameterList) pop()))
+										)
 								)
 						),
 				push(orginal.get())
@@ -749,7 +761,20 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	}
 
 	Rule DimSlice() {
-		return Sequence(LBRK,Slice(),ZeroOrMore(COMMA,Slice()),RBRK);
+		Var<DaedalusIndexAcess> i = new Var<>();
+		return Sequence(
+				i.set(new DaedalusIndexAcess()),
+				LBRK,
+				Slice(),
+				i.get().addSlice((DaedalusSlice) pop()),
+				ZeroOrMore(
+						COMMA,
+						Slice(),
+						i.get().addSlice((DaedalusSlice) pop())
+						),
+				RBRK,
+				push(i.getAndClear())
+				);
 	}
 
 	Rule Slice() {

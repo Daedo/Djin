@@ -24,6 +24,6 @@ public class DaedalusLiteral extends DaedalusExpression {
 		}
 		
 		
-		return super.toString()+" Literal: "+out;
+		return "Literal: "+out;
 	}
 }

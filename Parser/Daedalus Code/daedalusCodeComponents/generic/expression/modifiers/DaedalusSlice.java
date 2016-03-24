@@ -53,4 +53,28 @@ public class DaedalusSlice extends DaedalusSyntaxElement {
 		}
 		return false;
 	}
+	
+	@Override
+	public String toString() {
+		String out = "";
+		
+		if(this.start!=null) {
+			out = this.start.toString();
+		}
+		
+		if(hasEnd) {
+			out+=":";
+			if(this.end!=null) {
+				out+=this.end.toString();
+			}
+			
+			if(hasStep) {
+				out+=":";
+				if(this.step!=null) {
+					out+=this.step.toString();
+				}
+			}
+		}
+		return out;
+	}
 }
