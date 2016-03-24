@@ -96,6 +96,10 @@ import daedalusCodeComponents.statements.DaedalusIfCondition;
 import daedalusCodeComponents.statements.DaedalusReturnCommand;
 import daedalusCodeComponents.statements.DaedalusStatement;
 import daedalusCodeComponents.statements.DaedalusVarDecleration;
+import daedalusCodeComponents.statements.loop.DaedalusForEachLoop;
+import daedalusCodeComponents.statements.loop.DaedalusForLoop;
+import daedalusCodeComponents.statements.loop.DaedalusLoop;
+import daedalusCodeComponents.statements.loop.DaedalusWhileLoop;
 import daedalusParser.combonents.LetterMatcher;
 import daedalusParser.combonents.LetterOrDigitMatcher;
 import daedalusParser.combonents.LiteralMatcher;
@@ -413,7 +417,6 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				push(a.getAndClear())
 				);
 	}
-
 
 	Rule Expression() {
 		Var<DaedalusExpression> e = new Var<>();
@@ -950,7 +953,6 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	}
 
 	
-
 	//Statements
 	Rule Block() {
 		Var<DaedalusBlock> block = new Var<>();
@@ -1055,9 +1057,17 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 		return Sequence(DEFAULT,COLON,ZeroOrMore(Statement()));
 	}
 
-	//TODO
+	
 	Rule Loop() {
-		return Sequence(Optional(Label()),FirstOf(whileLoop(),doWhileLoop(),forLoop(),forEachLoop()));
+		Var<DaedalusName> n = new Var<>();
+		return Sequence(
+				Optional(
+						Label(),
+						n.set((DaedalusName) pop())
+						),
+				FirstOf(whileLoop(),doWhileLoop(),forLoop(),forEachLoop()),
+				((DaedalusLoop)peek()).setLabel(n.get())
+				);
 	}
 
 	Rule Label() {
@@ -1065,19 +1075,107 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	}
 
 	Rule whileLoop() {
-		return Sequence(WHILE,LPAR,Expression(),RPAR,Block());
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusStatement> s = new Var<>();
+		return Sequence(
+				WHILE,
+				LPAR,
+				Expression(),
+				e.set((DaedalusExpression) pop()),
+				RPAR,
+				Statement(),
+				s.set((DaedalusStatement) pop()),
+				push(new DaedalusWhileLoop(e.getAndClear(), s.getAndClear()))
+				);
 	}
 
 	Rule doWhileLoop() {
-		return Sequence(DO, Block(),WHILE,LPAR,Expression(),RPAR);
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusStatement> s = new Var<>();
+		return Sequence(
+				DO, 
+				Statement(),
+				s.set((DaedalusStatement) pop()),
+				WHILE,
+				LPAR,
+				Expression(),
+				e.set((DaedalusExpression) pop()),
+				RPAR,
+				SEMI,
+				push(new DaedalusWhileLoop(true,e.getAndClear(), s.getAndClear()))
+				);
 	}
-
+	
 	Rule forLoop() {
-		return Sequence(FOR,LPAR,FirstOf(VarDecl(),SEMI),Optional(Expression()),SEMI,Optional(FirstOf(Statement(),Expression())),RPAR,Block());
+		Var<DaedalusForLoop> f = new Var<>();
+		Var<DaedalusStatement> s1 = new Var<>();
+		Var<DaedalusStatement> s3 = new Var<>();
+		Var<DaedalusExpression> e2 = new Var<>();
+		
+		return Sequence(
+				FOR,LPAR,
+				FirstOf(
+						Sequence(
+								VarDecl(),
+								s1.set((DaedalusStatement) pop())
+								),
+						SEMI),
+				Optional(
+						Expression(),
+						e2.set((DaedalusExpression) pop())
+						),
+				SEMI,
+				Optional(
+						FirstOf(Statement(),Expression()),
+						s3.set((DaedalusStatement) pop())
+						),
+				RPAR,
+				Statement(),
+				f.set(new DaedalusForLoop((DaedalusStatement) pop())),
+				f.get().setInit(s1.getAndClear()),
+				f.get().setConditional(e2.getAndClear()),
+				f.get().setUpdate(s3.getAndClear()),
+				push(f.getAndClear())
+				);
 	}
-
+	
 	Rule forEachLoop() {
-		return Sequence(FirstOf(FOR,FORALL),LPAR,TypePattern(),Identifier(),Optional(INT,Identifier()),IN,Expression(),RPAR,Block());
+		Var<Boolean> b = new Var<>();
+		Var<DaedalusForEachLoop> f = new Var<>();
+		Var<DaedalusTypePattern> p = new Var<>();
+		Var<DaedalusName> n1 = new Var<>();
+		Var<DaedalusName> n2 = new Var<>();
+		Var<DaedalusExpression> e = new Var<>();
+		
+		return Sequence(
+				b.set(new Boolean(false)),
+				FirstOf(
+						FOR,
+						Sequence(FORALL,
+								b.set(new Boolean(true))
+								)
+						),
+				LPAR,
+				TypePattern(),
+				p.set((DaedalusTypePattern) pop()),
+				Identifier(),
+				n1.set((DaedalusName) pop()),
+				Optional(
+						INT,
+						Identifier(),
+						n2.set((DaedalusName) pop())
+						),
+				IN,
+				Expression(),
+				e.set((DaedalusExpression) pop()),
+				RPAR,
+				Block(),
+				f.set(new DaedalusForEachLoop((DaedalusStatement) pop())),
+				f.get().setContainer(e.getAndClear()),
+				f.get().setIndexName(n2.get()),
+				f.get().setSubpattern(p.getAndClear(), n1.getAndClear()),
+				push(f.getAndClear())
+				);
 	}
 
 	//TODO
