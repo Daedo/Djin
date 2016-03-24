@@ -90,7 +90,10 @@ import daedalusCodeComponents.imports.DaedalusImport;
 import daedalusCodeComponents.imports.DaedalusImportSpecifier;
 import daedalusCodeComponents.statements.DaedalusAssertion;
 import daedalusCodeComponents.statements.DaedalusBlock;
+import daedalusCodeComponents.statements.DaedalusControlCommand;
+import daedalusCodeComponents.statements.DaedalusControlLiteral;
 import daedalusCodeComponents.statements.DaedalusIfCondition;
+import daedalusCodeComponents.statements.DaedalusReturnCommand;
 import daedalusCodeComponents.statements.DaedalusStatement;
 import daedalusCodeComponents.statements.DaedalusVarDecleration;
 import daedalusParser.combonents.LetterMatcher;
@@ -411,12 +414,6 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
-
-	
-	//TODO REMOVE & CLEANUP
-	Rule NonWildcardTypeArguments() {
-		return Sequence(LPOINT, ReferenceType(), ZeroOrMore(COMMA, ReferenceType()), RPOINT);
-	}
 
 	Rule Expression() {
 		Var<DaedalusExpression> e = new Var<>();
@@ -1102,13 +1099,37 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 
 
 	Rule ControlCMD () {
-		return Sequence(FirstOf(BREAK,CONTINUE),Optional(Identifier()),SEMI);
+		Var<DaedalusControlCommand> c = new Var<>();
+		return Sequence(
+				FirstOf(BREAK,CONTINUE),
+				c.set(new DaedalusControlCommand(DaedalusControlLiteral.valueOf(match().trim().toUpperCase()))),
+				
+				Optional(
+						Identifier(),
+						c.get().setLabel((DaedalusName) pop())
+						),
+				push(c.getAndClear()),
+				SEMI);
 	}
 
 	Rule ReturnCMD() {
-		return Sequence(RETURN, Optional(Expression()),SEMI);
+		Var<DaedalusReturnCommand> r = new Var<>();
+		return Sequence(
+				RETURN,
+				r.set(new DaedalusReturnCommand()),
+				Optional(
+						Expression(),
+						r.get().setValue((DaedalusExpression) pop())
+						),
+				SEMI);
 	}
 
+
+	// HERE BE DRAGONS
+	//TODO REMOVE & CLEANUP
+	Rule NonWildcardTypeArguments() {
+		return Sequence(LPOINT, ReferenceType(), ZeroOrMore(COMMA, ReferenceType()), RPOINT);
+	}
 
 
 	//-------------------------------------------------------------------------
