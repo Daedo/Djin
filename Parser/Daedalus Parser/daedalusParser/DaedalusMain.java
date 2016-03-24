@@ -30,7 +30,7 @@ public class DaedalusMain {
 				}
 			} else {
 				String tree = ParseTreeUtils.printNodeTree(result);
-				System.out.println(tree);
+				//System.out.println(tree);
 
 				while(!result.valueStack.isEmpty()) {
 					System.out.println(result.valueStack.pop());

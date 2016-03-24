@@ -3,6 +3,7 @@ package daedalusCodeComponents.generic.expression.modifiers;
 import java.util.Vector;
 
 import daedalusCodeComponents.generic.expression.DaedalusExpression;
+import support.Tools;
 
 public class DaedalusIndexAcess extends DaedalusExpression {
 	private Vector<DaedalusSlice> slices;
@@ -24,14 +25,7 @@ public class DaedalusIndexAcess extends DaedalusExpression {
 	
 	@Override
 	public String toString() {
-		String out = "[";
-		for(DaedalusSlice s:this.slices) {
-			if(!out.equals("")) {
-				out+=", ";
-			}
-			out+=s.toString();
-		}
-		out+="]";
+		String out = Tools.list("[", "]", this.slices);
 		return super.toString() + this.index+out;
 	}
 }

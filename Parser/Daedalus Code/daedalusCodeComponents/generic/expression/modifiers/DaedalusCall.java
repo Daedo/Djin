@@ -1,6 +1,6 @@
-package daedalusCodeComponents.generic.expression;
+package daedalusCodeComponents.generic.expression.modifiers;
 
-import daedalusCodeComponents.generic.expression.modifiers.DaedalusParameterList;
+import daedalusCodeComponents.generic.expression.DaedalusExpression;
 
 public class DaedalusCall extends DaedalusExpression{
 	private DaedalusExpression method;

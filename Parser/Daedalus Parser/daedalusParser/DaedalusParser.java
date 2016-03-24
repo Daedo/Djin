@@ -61,7 +61,6 @@ import daedalusCodeComponents.generic.DaedalusArrayName;
 import daedalusCodeComponents.generic.DaedalusName;
 import daedalusCodeComponents.generic.codeConstruct.DaedalusMethod;
 import daedalusCodeComponents.generic.codeConstruct.DaedalusOperatorOverload;
-import daedalusCodeComponents.generic.expression.DaedalusCall;
 import daedalusCodeComponents.generic.expression.DaedalusExpression;
 import daedalusCodeComponents.generic.expression.DaedalusExpressionList;
 import daedalusCodeComponents.generic.expression.DaedalusOperator;
@@ -69,6 +68,7 @@ import daedalusCodeComponents.generic.expression.leaves.DaedalusConstuctorCall;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLambdaExpression;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLambdaParameter;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLiteral;
+import daedalusCodeComponents.generic.expression.modifiers.DaedalusCall;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusIndexAcess;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusParameterList;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusSlice;
@@ -634,7 +634,6 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	Rule ModifiedExpression() {
 		Var<DaedalusExpression> e = new Var<>();
 		Var<DaedalusIndexAcess> ia = new Var<>();
-		Var<DaedalusExpression> orginal = new Var<>();
 		return Sequence(
 				FirstOf(
 						DirectExpression(),
@@ -644,7 +643,6 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 								)
 						),
 				e.set((DaedalusExpression) pop()),
-				orginal.set(e.get()),
 				
 				ZeroOrMore(
 						FirstOf(
@@ -661,7 +659,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 										)
 								)
 						),
-				push(orginal.get())
+				push(e.get())
 				);
 	}
 

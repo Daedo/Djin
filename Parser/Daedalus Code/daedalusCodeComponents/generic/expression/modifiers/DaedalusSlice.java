@@ -58,20 +58,20 @@ public class DaedalusSlice extends DaedalusSyntaxElement {
 	public String toString() {
 		String out = "";
 		
-		if(this.start!=null) {
-			out = this.start.toString();
+		if(this.start.isPresent()) {
+			out = this.start.get().toString();
 		}
 		
 		if(hasEnd) {
 			out+=":";
-			if(this.end!=null) {
-				out+=this.end.toString();
+			if(this.end.isPresent()) {
+				out+=this.end.get().toString();
 			}
 			
 			if(hasStep) {
 				out+=":";
-				if(this.step!=null) {
-					out+=this.step.toString();
+				if(this.step.isPresent()) {
+					out+=this.step.get().toString();
 				}
 			}
 		}
