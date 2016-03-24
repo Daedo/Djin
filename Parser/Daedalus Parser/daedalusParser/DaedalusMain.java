@@ -12,6 +12,12 @@ import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
 
 public class DaedalusMain {
+	
+	/*
+	 * TODO instanceof (...).class
+	 */
+	
+	
 	public static void main(String[] args) {
 		String path = "C:\\Users\\Dominik\\Desktop\\Dokumente\\Auﬂerschulisches\\Programmierung\\Daedalus Language\\";
 		String name = "testfile";

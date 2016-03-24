@@ -9,7 +9,7 @@ public enum DaedalusOperator {
 	MINUSEQ("-="),MOD("%"),MODEQ("%="),NOTEQ("!="),NOT("!"),OR("|"),
 	OREQ("|="),OROR("||"),PLUS("+"),PLUSEQ("+="),SHIFTLEFT("<<"),
 	SHIFTLEFTEQ("<<="),SHIFTRIGHT(">>"),SHIFTRIGHTEQ(">>="),MUL("*"),
-	MULEQ("*="),POW("**"),POWEQ("**="),NEG("~"),INSTANCEOF("instanceof");
+	MULEQ("*="),POW("**"),POWEQ("**="),NEG("~");
 	
 	private String opCode;
 	private DaedalusOperator(String val) {
@@ -23,5 +23,10 @@ public enum DaedalusOperator {
 			}
 		}
 		return NONE;
+	}
+	
+	@Override
+	public String toString() {
+		return this.opCode;
 	}
 }

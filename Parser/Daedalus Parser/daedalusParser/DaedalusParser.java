@@ -61,9 +61,14 @@ import daedalusCodeComponents.generic.DaedalusArrayName;
 import daedalusCodeComponents.generic.DaedalusName;
 import daedalusCodeComponents.generic.codeConstruct.DaedalusMethod;
 import daedalusCodeComponents.generic.codeConstruct.DaedalusOperatorOverload;
+import daedalusCodeComponents.generic.expression.DaedalusCalculation;
+import daedalusCodeComponents.generic.expression.DaedalusCast;
+import daedalusCodeComponents.generic.expression.DaedalusConditionalCalculation;
 import daedalusCodeComponents.generic.expression.DaedalusExpression;
 import daedalusCodeComponents.generic.expression.DaedalusExpressionList;
+import daedalusCodeComponents.generic.expression.DaedalusInstanceof;
 import daedalusCodeComponents.generic.expression.DaedalusOperator;
+import daedalusCodeComponents.generic.expression.DaedalusUnaryCalculation;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusConstuctorCall;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLambdaExpression;
 import daedalusCodeComponents.generic.expression.leaves.DaedalusLambdaParameter;
@@ -269,8 +274,8 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 
 				Optional(
 						EQU,
-						Expression()//, XXX UNCOMMENT
-						//v.get().setExpression((DaedalusExpression) pop())
+						Expression(),
+						v.get().setExpression((DaedalusExpression) pop())
 						),
 				SEMI,
 				Spacing(),
@@ -407,62 +412,25 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	}
 
 
-	/*
-	//Expression
-	//TODO Expression
-	Rule Primary() {
-		return FirstOf(
-				ParExpression(),	// a * (b + c)
-				Literal(),	// Variable
-
-				Sequence(NEW, Creator()),
-				Sequence(QualifiedIdentifier(), Optional(IdentifierSuffix())),
-				Sequence(DimType(), DOT, CLASS),
-
-				ExpressionList(),		// {x,y,z}
-				LambdaExpression()		// n -> n**2
-				);
-	}
-
-	Rule ExpressionList() {
-		Var<DaedalusExpressionList> list = new Var<>();
-		return Sequence(
-				list.set(new DaedalusExpressionList()),
-				LWING,Expression(),list.get().addExperssion((DaedalusExpression)pop()),
-				ZeroOrMore(COMMA,Expression(),list.get().addExperssion((DaedalusExpression)pop())),RWING,
-				push(list.get()),
-				list.clear()
-				);
-	}
-
-	Rule IdentifierSuffix() {
-		return FirstOf(
-				OneOrMore(DimSlice()),
-				Arguments(),
-				Sequence(
-						DOT,
-						FirstOf(
-								CLASS,
-								ExplicitGenericInvocation(),
-								THIS,
-								Sequence(SUPER, Arguments())
-								)
-						)
-				);
-	}
-
-	Rule ExplicitGenericInvocation() {
-		return Sequence(NonWildcardTypeArguments(), ExplicitGenericInvocationSuffix());
-	}*/
-
+	
+	//TODO REMOVE & CLEANUP
 	Rule NonWildcardTypeArguments() {
 		return Sequence(LPOINT, ReferenceType(), ZeroOrMore(COMMA, ReferenceType()), RPOINT);
 	}
 
 	Rule Expression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				JoinExpression(),
-				ZeroOrMore(AssignmentOperator(), JoinExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						AssignmentOperator(), 
+						o.set(DaedalusOperator.fromString(match())),
+						JoinExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
@@ -472,69 +440,148 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 
 	// a,b
 	Rule JoinExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				ConditionalExpression(),
-				ZeroOrMore(COMMA, ConditionalExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						COMMA, 
+						o.set(DaedalusOperator.fromString(match())),
+						ConditionalExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	Rule JoinFreeExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				ConditionalExpression(),
-				ZeroOrMore(AssignmentOperator(), ConditionalExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						AssignmentOperator(), 
+						o.set(DaedalusOperator.fromString(match())),
+						ConditionalExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// x ? y : z
 	Rule ConditionalExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusExpression> e2 = new Var<>();
 		return Sequence(
 				BooleanORExpression(),
-				ZeroOrMore(QUERY, Expression(), COLON, BooleanORExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						QUERY, 
+						Expression(),
+						e2.set((DaedalusExpression) pop()),
+						COLON, 
+						BooleanORExpression(),
+						e.set(new DaedalusConditionalCalculation(e.get(), e2.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// ||
 	Rule BooleanORExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				BooleanXORExpression(),
-				ZeroOrMore(OROR, BooleanXORExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						OROR, 
+						o.set(DaedalusOperator.fromString(match())),
+						BooleanXORExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// ^^
 	Rule BooleanXORExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				BooleanANDExpression(),
-				ZeroOrMore(HATHAT,BooleanANDExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						HATHAT,
+						o.set(DaedalusOperator.fromString(match())),
+						BooleanANDExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// &&
 	Rule BooleanANDExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				EqualityExpression(),
-				ZeroOrMore(ANDAND, EqualityExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						ANDAND,
+						o.set(DaedalusOperator.fromString(match())),
+						EqualityExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// == !=
 	Rule EqualityExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				ComparisonExpression(),
-				ZeroOrMore(FirstOf(EQUAL, NOTEQUAL), ComparisonExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						FirstOf(EQUAL, NOTEQUAL),
+						o.set(DaedalusOperator.fromString(match())),
+						ComparisonExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// > < >= <= instanceof
 	Rule ComparisonExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				BitORExpression(),
+				e.set((DaedalusExpression) pop()),
 				ZeroOrMore(
 						FirstOf(
-								Sequence(FirstOf(LE, GE, LT, GT),BitORExpression()),
-								Sequence(INSTANCEOF,ParDimType())
+								Sequence(
+										FirstOf(LE, GE, LT, GT),
+										o.set(DaedalusOperator.fromString(match())),
+										BitORExpression(),
+										e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+										),
+								
+								Sequence(
+										INSTANCEOF,
+										ParDimType(),
+										e.set(new DaedalusInstanceof(e.get(),(DaedalusType) pop()))
+										)
 								)
-						)
+						),
+				push(e.getAndClear())
 				);
 	}
 
@@ -547,71 +594,155 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 
 	// |
 	Rule BitORExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				BitXORExpression(),
-				ZeroOrMore(OR, BitXORExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						OR, 
+						o.set(DaedalusOperator.fromString(match())),
+						BitXORExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// ^
 	Rule BitXORExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				BitANDExpression(),
-				ZeroOrMore(HAT, BitANDExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						HAT, 
+						o.set(DaedalusOperator.fromString(match())),
+						BitANDExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// &
 	Rule BitANDExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				ShiftExpression(),
-				ZeroOrMore(AND, ShiftExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						AND, 
+						o.set(DaedalusOperator.fromString(match())),
+						ShiftExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// <<(<) >>(>)
 	Rule ShiftExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				AdditiveExpression(),
-				ZeroOrMore(FirstOf(SL, SR, BSR, BSL), AdditiveExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						FirstOf(SL, SR, BSR, BSL), 
+						o.set(DaedalusOperator.fromString(match())),
+						AdditiveExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// + -
 	Rule AdditiveExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				MultiplicativeExpression(),
-				ZeroOrMore(FirstOf(PLUS, MINUS), MultiplicativeExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						FirstOf(PLUS, MINUS), 
+						o.set(DaedalusOperator.fromString(match())),
+						MultiplicativeExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// * /
 	Rule MultiplicativeExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				ExponentialExpression(),
-				ZeroOrMore(FirstOf(STAR, DIV, MOD), ExponentialExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						FirstOf(STAR, DIV, MOD),
+						o.set(DaedalusOperator.fromString(match())),
+						ExponentialExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// a**b
 	Rule ExponentialExpression() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				UnaryExpression(),
-				ZeroOrMore(STARSTAR,UnaryExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						STARSTAR,
+						o.set(DaedalusOperator.fromString(match())),
+						UnaryExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 
 	// Cast ++ -- ! ~ (+ - Unary)
 	Rule UnaryExpression() {
-		return Sequence(
-				ZeroOrMore(PrefixOp()),
-				ReferencePath(),
-				ZeroOrMore(PostfixOp())
+		Var<DaedalusOperator> o = new Var<>();
+		Var<DaedalusType> t = new Var<>();
+		return FirstOf(
+				Sequence(
+						PrefixOp(),
+						o.set(DaedalusOperator.fromString(match())),
+						UnaryExpression(),
+						push(new DaedalusUnaryCalculation(o.getAndClear(), (DaedalusExpression) pop(), true))
+						),
+				
+				Sequence(
+						Cast(),
+						t.set((DaedalusType) pop()),
+						UnaryExpression(),
+						push(new DaedalusCast(t.getAndClear(), (DaedalusExpression) pop()))
+						),
+				
+				Sequence(
+						ReferencePath(),
+						ZeroOrMore(
+								PostfixOp(),
+								o.set(DaedalusOperator.fromString(match())),
+								push(new DaedalusUnaryCalculation(o.getAndClear(), (DaedalusExpression) pop(), false))
+								)
+						)
 				);
 	}
 
 	Rule PrefixOp() {
-		return FirstOf( INC, DEC, BANG, TILDA, PLUS, MINUS, Cast());
+		return FirstOf( INC, DEC, BANG, TILDA, PLUS, MINUS);
 	}
 
 	Rule Cast() {
@@ -624,9 +755,18 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 
 	// a.b().c
 	Rule ReferencePath() {
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusOperator> o = new Var<>();
 		return Sequence(
 				ModifiedExpression(),
-				ZeroOrMore(DOT,ModifiedExpression())
+				e.set((DaedalusExpression) pop()),
+				ZeroOrMore(
+						DOT,
+						o.set(DaedalusOperator.fromString(match())),
+						ModifiedExpression(),
+						e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
+						),
+				push(e.getAndClear())
 				);
 	}
 	
@@ -1178,9 +1318,9 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	Rule Keyword() {
 		return Sequence(
 				FirstOf("assert","as", "boolean", "break", "case", "catch", "class", "const", "continue", "decimal","default", "do", "elif", "else",
-						"enum", "extends", "finally", "final",  "forall", "for", "from", "goto", "if",  "implements", "import", "interface", "int",
-						"instanceof","in", "new", "operator", "package", "return", "static", "string", "super", "switch", "synchronized", "this", "tup",
-						"throws", "throw", "try", "unsigned", "void", "while"),
+						"enum", "extends", "false", "finally", "final",  "forall", "for", "from", "goto", "if",  "implements", "import", "interface", "int",
+						"instanceof","in", "new", "null", "operator", "package", "return", "static", "string", "super", "switch", "synchronized", "this", "tup",
+						"throws", "throw", "try", "true", "unsigned", "void", "while"),
 				TestNot(LetterOrDigit())
 				);
 	}
@@ -1232,6 +1372,9 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	public final Rule BOOLEAN = Keyword("boolean");
 	public final Rule STRING = Keyword("string");
 	public final Rule OPERATOR = Keyword("operator");
+	public final Rule NULL = Keyword("null");
+	public final Rule TRUE = Keyword("true");
+	public final Rule FALSE = Keyword("false");
 
 	@SuppressNode
 	@DontLabel
@@ -1251,9 +1394,9 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 						Sequence(lit.IntegerLiteral(),push(new DaedalusLiteral(new BigInteger(match())))),
 						//lit.CharLiteral(),
 						Sequence(lit.StringLiteral(),push(new DaedalusLiteral(match()))),
-						Sequence("true", TestNot(LetterOrDigit()),push(new DaedalusLiteral(new Boolean(true)))),
-						Sequence("false", TestNot(LetterOrDigit()),push(new DaedalusLiteral(new Boolean(false)))),
-						Sequence("null", TestNot(LetterOrDigit()),push(new DaedalusLiteral(null)))
+						Sequence(TRUE, TestNot(LetterOrDigit()),push(new DaedalusLiteral(new Boolean(true)))),
+						Sequence(FALSE, TestNot(LetterOrDigit()),push(new DaedalusLiteral(new Boolean(false)))),
+						Sequence(NULL, TestNot(LetterOrDigit()),push(new DaedalusLiteral(null)))
 						),
 				Spacing()
 				);
