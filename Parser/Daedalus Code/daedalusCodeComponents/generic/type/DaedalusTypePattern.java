@@ -13,7 +13,6 @@ public class DaedalusTypePattern extends DaedalusSyntaxElement {
 	
 	public boolean addType(DaedalusType type) {
 		this.types.add(type);
-		System.out.println(this.toString());
 		return true;
 	}
 	
