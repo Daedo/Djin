@@ -10,40 +10,48 @@ import daedalusCodeComponents.generic.type.DaedalusType;
 public class DaedalusVarDecleration extends DaedalusStatement {
 	Vector<DaedalusName> names;
 	DaedalusType type;
-	Optional<DaedalusExpression> value;
+	Vector<Optional<DaedalusExpression>> value;
 	
 	public DaedalusVarDecleration(DaedalusType t) {
 		this.type = t;
 		
 		this.names = new Vector<>();
-		this.value = Optional.empty();
+		this.value = new Vector<>();
 	}
 	
 	public boolean addName(DaedalusName name) {
 		this.names.add(name);
+		this.value.add(Optional.empty());
 		return true;
 	}
 	
-	public boolean setExpression(DaedalusExpression val) {
-		if(val!=null) {
-			this.value = Optional.of(val);
-			return true;
+	public boolean addName(DaedalusName name,DaedalusExpression expr) {
+		if(expr==null) {
+			return addName(name);
 		}
-		return false;
+		this.names.add(name);
+		this.value.add(Optional.of(expr));
+		return true;
 	}
 	
 	@Override
 	public String toString() {
 		String s = "";
-		for(DaedalusName n:this.names) {
+		for(int i=0;i<this.names.size();i++) {
+			DaedalusName n = this.names.get(i);
+			Optional<DaedalusExpression> e = this.value.get(i);
+			
 			if(!s.equals("")) {
 				s+= ", ";
 			}
 			s+=n;
+			
+			if(e.isPresent()) {
+				s+=" = "+e.get();
+			}
+			
 		}
-		if(this.value.isPresent()) {
-			s+= " = "+this.value.get();
-		}
+
 		
 		return super.toString()+" Var Decleration "+type+" "+s;
 	}

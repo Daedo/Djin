@@ -78,6 +78,7 @@ import daedalusCodeComponents.generic.expression.modifiers.DaedalusIndexAcess;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusParameterList;
 import daedalusCodeComponents.generic.expression.modifiers.DaedalusSlice;
 import daedalusCodeComponents.generic.type.DaedalusArrayDimension;
+import daedalusCodeComponents.generic.type.DaedalusExpressionType;
 import daedalusCodeComponents.generic.type.DaedalusNamedTypePattern;
 import daedalusCodeComponents.generic.type.DaedalusSimpleType;
 import daedalusCodeComponents.generic.type.DaedalusTupleType;
@@ -269,30 +270,55 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
-	//TODO a=1,b=2,c,...
 	Rule VarDecl() {
-		Var<DaedalusVarDecleration> v = new Var<>();
-
 		return Sequence(
 				DimType(),
-				v.set(new DaedalusVarDecleration((DaedalusType) pop())),
+				push(new DaedalusVarDecleration((DaedalusType) pop())),
 
+				FirstOf(
+						VarSetEnd(),
+
+						Sequence(
+								VarSet(),
+								ZeroOrMore(COMMA,VarSet()),
+								Optional(COMMA,VarSetEnd())
+								)
+						),
+				SEMI
+				);
+	}
+
+	Rule VarSet() {
+		Var<DaedalusName> n = new Var<>();
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusVarDecleration> v = new Var<>();
+		return Sequence(
+				v.set((DaedalusVarDecleration) pop()),
 				DimIdentifier(),
-				v.get().addName((DaedalusName) pop()),
-
-				ZeroOrMore(
-						COMMA,
-						DimIdentifier(),
-						v.get().addName((DaedalusName) pop())
-						),
-
+				n.set((DaedalusName) pop()),
 				Optional(
-						EQU,
-						Expression(),
-						v.get().setExpression((DaedalusExpression) pop())
+						EQU,JoinFreeExpression(),
+						e.set((DaedalusExpression) pop())
 						),
-				SEMI,
-				Spacing(),
+				v.get().addName(n.getAndClear(), e.getAndClear()),
+				push(v.getAndClear())
+				);
+	}
+
+	Rule VarSetEnd() {
+		Var<DaedalusName> n = new Var<>();
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusVarDecleration> v = new Var<>();
+		return Sequence(
+				v.set((DaedalusVarDecleration) pop()),
+				DimIdentifier(),
+				n.set((DaedalusName) pop()),
+
+				EQU,
+				Expression(),
+				e.set((DaedalusExpression) pop()),
+
+				v.get().addName(n.getAndClear(), e.getAndClear()),
 				push(v.getAndClear())
 				);
 	}
@@ -333,7 +359,8 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 						),
 				FirstOf(
 						FunctionType(),
-						PlainType()
+						PlainType(),
+						ExpressionType()
 						),
 				((DaedalusType)peek()).addModifiers(mod.getAndClear())
 				);
@@ -342,7 +369,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	Rule TypeSpecifier() {
 		return FirstOf(FINAL,UNSIGNED);
 	}
-
+	
 	Rule PlainType() {
 		return FirstOf(
 				SimpleType(),
@@ -411,6 +438,15 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
+	Rule ExpressionType() {
+		return Sequence(
+				ReferencePath(),
+				DOT,
+				CLASS,
+				push(new DaedalusExpressionType((DaedalusExpression) pop()))
+				);
+	}
+	
 	Rule DimIdentifier() {
 		Var<DaedalusArrayName> a = new Var<>();
 
@@ -580,7 +616,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 										BitORExpression(),
 										e.set(new DaedalusCalculation(e.get(), o.getAndClear(), (DaedalusExpression) pop()))
 										),
-								
+
 								Sequence(
 										INSTANCEOF,
 										ParDimType(),
@@ -729,14 +765,14 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 						UnaryExpression(),
 						push(new DaedalusUnaryCalculation(o.getAndClear(), (DaedalusExpression) pop(), true))
 						),
-				
+
 				Sequence(
 						Cast(),
 						t.set((DaedalusType) pop()),
 						UnaryExpression(),
 						push(new DaedalusCast(t.getAndClear(), (DaedalusExpression) pop()))
 						),
-				
+
 				Sequence(
 						ReferencePath(),
 						ZeroOrMore(
@@ -776,7 +812,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				push(e.getAndClear())
 				);
 	}
-	
+
 	//[] () new 
 	Rule ModifiedExpression() {
 		Var<DaedalusExpression> e = new Var<>();
@@ -790,7 +826,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 								)
 						),
 				e.set((DaedalusExpression) pop()),
-				
+
 				ZeroOrMore(
 						FirstOf(
 								Sequence(
@@ -799,7 +835,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 										ia.get().setIndex(e.get()),
 										e.set(ia.getAndClear())
 										),
-								
+
 								Sequence(
 										Call(),
 										e.set(new DaedalusCall(e.get(),(DaedalusParameterList) pop()))
@@ -838,7 +874,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				ExpressionList()					// List
 				); 
 	}
-	
+
 	Rule ExpressionList() {
 		Var<DaedalusExpressionList> l = new Var<>();
 		return Sequence(
@@ -931,17 +967,17 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 								JoinFreeExpression(),
 								s.get().setStart((DaedalusExpression) pop())
 								),
-						
+
 						Sequence(
 								Test(COLON),
 								s.get().setHasEnd()
 								)
 						),
-				
+
 				Optional(
 						COLON,
 						s.get().setHasEnd(),
-						
+
 						Optional(
 								JoinFreeExpression(),
 								s.get().setEnd((DaedalusExpression) pop())
@@ -959,14 +995,22 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
-	
 	//Statements
 	Rule Block() {
 		Var<DaedalusBlock> block = new Var<>();
-		return Sequence( block.set(new DaedalusBlock()),
-				LWING,ZeroOrMore(Statement()/*,block.get().addStatement((DaedalusStatement)pop()) XXX Uncomment*/),Spacing(),RWING,
-				push(block.get()),block.clear());
+		return Sequence(
+				block.set(new DaedalusBlock()),
+				LWING,
+				ZeroOrMore(
+						Statement(),
+						block.get().addStatement((DaedalusStatement)pop())
+						),
+				Spacing(),
+				RWING,
+				push(block.getAndClear())
+				);
 	}
+
 
 	Rule Statement() {
 		return Sequence(
@@ -980,9 +1024,11 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 						Switch(),
 						Loop(),
 						ControlCMD(),
-						ReturnCMD()),
+						ReturnCMD()
+						),
 				Spacing());
 	}
+
 
 	Rule Assertion() {
 		return Sequence(
@@ -990,6 +1036,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				push(new DaedalusAssertion((DaedalusExpression)pop())),
 				SEMI);
 	}
+	
 
 	Rule ifElseStatement() {
 		Var<DaedalusExpression> e = new Var<>();
@@ -1050,7 +1097,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 
 	Rule Switch() {
 		Var<DaedalusExpression> e = new Var<>();
-		
+
 		return Sequence(
 				SWITCH,LPAR,
 				Expression(),
@@ -1107,7 +1154,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
-	
+
 	Rule Loop() {
 		Var<DaedalusName> n = new Var<>();
 		return Sequence(
@@ -1155,13 +1202,13 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				push(new DaedalusWhileLoop(true,e.getAndClear(), s.getAndClear()))
 				);
 	}
-	
+
 	Rule forLoop() {
 		Var<DaedalusForLoop> f = new Var<>();
 		Var<DaedalusStatement> s1 = new Var<>();
 		Var<DaedalusStatement> s3 = new Var<>();
 		Var<DaedalusExpression> e2 = new Var<>();
-		
+
 		return Sequence(
 				FOR,LPAR,
 				FirstOf(
@@ -1188,7 +1235,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				push(f.getAndClear())
 				);
 	}
-	
+
 	Rule forEachLoop() {
 		Var<Boolean> b = new Var<>();
 		Var<DaedalusForEachLoop> f = new Var<>();
@@ -1196,7 +1243,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 		Var<DaedalusName> n1 = new Var<>();
 		Var<DaedalusName> n2 = new Var<>();
 		Var<DaedalusExpression> e = new Var<>();
-		
+
 		return Sequence(
 				b.set(new Boolean(false)),
 				FirstOf(
@@ -1279,11 +1326,11 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 	Rule StreamParam() {
 		Var<DaedalusStreamParameterList> p = new Var<>();
 		return Sequence(
-					p.set((DaedalusStreamParameterList) peek()),
-					FirstOf(
-							Sequence(STAR,p.get().addParameter(null)),
-							Sequence(JoinFreeExpression(),p.get().addParameter((DaedalusExpression) pop()))
-							)
+				p.set((DaedalusStreamParameterList) peek()),
+				FirstOf(
+						Sequence(STAR,p.get().addParameter(null)),
+						Sequence(JoinFreeExpression(),p.get().addParameter((DaedalusExpression) pop()))
+						)
 				);
 	}
 
@@ -1293,7 +1340,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 		return Sequence(
 				FirstOf(BREAK,CONTINUE),
 				c.set(new DaedalusControlCommand(DaedalusControlLiteral.valueOf(match().trim().toUpperCase()))),
-				
+
 				Optional(
 						Identifier(),
 						c.get().setLabel((DaedalusName) pop())
@@ -1311,6 +1358,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 						Expression(),
 						r.get().setValue((DaedalusExpression) pop())
 						),
+				push(r.getAndClear()),
 				SEMI);
 	}
 
