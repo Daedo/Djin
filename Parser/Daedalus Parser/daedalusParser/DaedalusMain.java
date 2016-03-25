@@ -1,65 +1,58 @@
 package daedalusParser;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.parboiled.Parboiled;
 import org.parboiled.errors.ParseError;
-import org.parboiled.parserunners.ReportingParseRunner;
-import org.parboiled.support.ParseTreeUtils;
+import org.parboiled.parserunners.ErrorLocatingParseRunner;
 import org.parboiled.support.ParsingResult;
 
+import daedalusCodeComponents.DaedalusCompilationUnit;
+import daedalusCodeComponents.DaedalusSyntaxElement;
+import support.Tools;
+
 public class DaedalusMain {
-	
-	/*
-	 * TODO instanceof (...).class
-	 */
-	
-	
+
+
 	public static void main(String[] args) {
 		String path = "C:\\Users\\Dominik\\Desktop\\Dokumente\\Außerschulisches\\Programmierung\\Daedalus Language\\";
 		String name = "testfile";
 		String end = ".dae";
 
-		DaedalusParser parser = Parboiled.createParser(DaedalusParser.class);
 		try {
-			String data = Files.lines(Paths.get(path+name+end)).map(s->s+"\n").reduce((String s1,String s2)->s1+s2).get();
+			DaedalusCompilationUnit unit = parseFile(path+name+end);
+			System.out.println(unit);
+		} catch (DaedalusParsingException e) {
+			System.err.println(e.getMessage());
+		}
+	}
 
-			ReportingParseRunner<?> runner = new ReportingParseRunner<>(parser.CompilationUnit());
-			ParsingResult<?> result = runner.run(data);
-			if(result.hasErrors()) {
-				System.err.println("Errors:");
-				for(ParseError err:result.parseErrors) {
-					System.err.println(err.getErrorMessage());
-				}
-			} else {
-				String tree = ParseTreeUtils.printNodeTree(result);
-				//System.out.println(tree);
+	public static DaedalusCompilationUnit parseFile(String fileName) throws DaedalusParsingException{
 
-				while(!result.valueStack.isEmpty()) {
-					System.out.println(result.valueStack.pop());
-				}
-				
-				
-				try{
-					// Create file 
-					FileWriter fstream = new FileWriter(path+name+"_out.txt");
-					BufferedWriter out = new BufferedWriter(fstream);
-					out.write(tree);
-					//Close the output stream
-					out.close();
-				}catch (Exception e){//Catch exception if any
-					System.err.println("Error: " + e.getMessage());
-				}
+		DaedalusParser parser = Parboiled.createParser(DaedalusParser.class);
 
-			}
-
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		String data = "";
+		try {
+			data = Files.lines(Paths.get(fileName)).map(s->s+"\n").reduce((String s1,String s2)->s1+s2).get();
+		} catch (IOException e) {
+			throw new DaedalusParsingException("File Error:\n"+e.getMessage());
 		}
 
+		ErrorLocatingParseRunner<DaedalusSyntaxElement> runner = new ErrorLocatingParseRunner<>(parser.CompilationUnit());
+		ParsingResult<DaedalusSyntaxElement> result = runner.run(data);
+		if(result.hasErrors()) {
+			ParseError err = result.parseErrors.get(0);
+			throw new DaedalusParsingException(Tools.getSurrindingLinesWithNumbers(data, err.getStartIndex(), err.getEndIndex()));
+		}
+
+		if(!result.valueStack.isEmpty()) {
+			DaedalusSyntaxElement top = result.valueStack.pop();
+			if(top instanceof DaedalusCompilationUnit) {
+				return (DaedalusCompilationUnit) top;
+			}
+		}
+		throw new DaedalusParsingException("Intern Parsing Exception");
 	}
 }

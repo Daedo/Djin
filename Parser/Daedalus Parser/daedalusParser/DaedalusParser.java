@@ -146,8 +146,8 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 								SEMI
 								)
 						),
-				EOI,
-				push(unit.get())
+						EOI,
+				push(unit.getAndClear())
 				);
 	}
 
