@@ -90,16 +90,22 @@ import daedalusCodeComponents.imports.DaedalusImport;
 import daedalusCodeComponents.imports.DaedalusImportSpecifier;
 import daedalusCodeComponents.statements.DaedalusAssertion;
 import daedalusCodeComponents.statements.DaedalusBlock;
+import daedalusCodeComponents.statements.DaedalusCase;
 import daedalusCodeComponents.statements.DaedalusControlCommand;
 import daedalusCodeComponents.statements.DaedalusControlLiteral;
 import daedalusCodeComponents.statements.DaedalusIfCondition;
 import daedalusCodeComponents.statements.DaedalusReturnCommand;
 import daedalusCodeComponents.statements.DaedalusStatement;
+import daedalusCodeComponents.statements.DaedalusSwitch;
 import daedalusCodeComponents.statements.DaedalusVarDecleration;
 import daedalusCodeComponents.statements.loop.DaedalusForEachLoop;
 import daedalusCodeComponents.statements.loop.DaedalusForLoop;
 import daedalusCodeComponents.statements.loop.DaedalusLoop;
 import daedalusCodeComponents.statements.loop.DaedalusWhileLoop;
+import daedalusCodeComponents.statements.stream.DaedalusStream;
+import daedalusCodeComponents.statements.stream.DaedalusStreamCall;
+import daedalusCodeComponents.statements.stream.DaedalusStreamElement;
+import daedalusCodeComponents.statements.stream.DaedalusStreamParameterList;
 import daedalusParser.combonents.LetterMatcher;
 import daedalusParser.combonents.LetterOrDigitMatcher;
 import daedalusParser.combonents.LiteralMatcher;
@@ -263,6 +269,7 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
+	//TODO a=1,b=2,c,...
 	Rule VarDecl() {
 		Var<DaedalusVarDecleration> v = new Var<>();
 
@@ -1040,21 +1047,64 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 		return Sequence(ELSE, Statement(),push(new DaedalusIfCondition((DaedalusStatement) pop())));
 	}
 
-	//TODO
+
 	Rule Switch() {
-		return Sequence(SWITCH,LPAR,Expression(),RPAR,SwitchBlock());
+		Var<DaedalusExpression> e = new Var<>();
+		
+		return Sequence(
+				SWITCH,LPAR,
+				Expression(),
+				e.set((DaedalusExpression) pop()),
+				RPAR,
+				SwitchBlock(),
+				push(new DaedalusSwitch(e.getAndClear(), (DaedalusCase) pop()))
+				);
 	}
 
 	Rule SwitchBlock() {
-		return Sequence(OneOrMore(Case()),Optional(Default()));
+		Var<DaedalusCase> c = new Var<>();
+		return Sequence(
+				Case(),
+				c.set((DaedalusCase) peek()),
+				ZeroOrMore(
+						Case(),
+						c.get().setNextCase((DaedalusCase) peek()),
+						c.set((DaedalusCase) pop())
+						),
+				Optional(Default(),
+						c.get().setNextCase((DaedalusCase) pop())
+						),
+				c.clear()
+				);
 	}
 
 	Rule Case() {
-		return Sequence(CASE, Literal(),COLON,ZeroOrMore(Statement()));
+		Var<DaedalusCase> c = new Var<>();
+		return Sequence(
+				CASE, 
+				Literal(),
+				c.set(new DaedalusCase((DaedalusLiteral) pop())),
+				COLON,
+				ZeroOrMore(
+						Statement(),
+						c.get().addStatement((DaedalusStatement) pop())
+						),
+				push(c.getAndClear())
+				);
 	}
 
 	Rule Default() {
-		return Sequence(DEFAULT,COLON,ZeroOrMore(Statement()));
+		Var<DaedalusCase> c = new Var<>();
+		return Sequence(
+				DEFAULT,
+				COLON,
+				c.set(new DaedalusCase()),
+				ZeroOrMore(
+						Statement(),
+						c.get().addStatement((DaedalusStatement) pop())
+						),
+				push(c.getAndClear())
+				);
 	}
 
 	
@@ -1178,21 +1228,63 @@ public class DaedalusParser extends BaseParser<DaedalusSyntaxElement> {
 				);
 	}
 
-	//TODO
 	Rule Stream() {
-		return Sequence(Expression(), OneOrMore(COLARROW,StreamElement()),SEMI);
+		Var<DaedalusExpression> e = new Var<>();
+		Var<DaedalusStreamElement> s = new Var<>();
+		Var<DaedalusStream> str = new Var<>();
+		return Sequence(
+				Expression(), 
+				e.set((DaedalusExpression) pop()),
+				COLARROW,
+				StreamElement(),
+				s.set((DaedalusStreamElement) pop()),
+				str.set(new DaedalusStream(e.getAndClear(), s.get())),
+				ZeroOrMore(
+						COLARROW,
+						StreamElement(),
+						s.get().setNext((DaedalusStreamElement) peek()),
+						s.set((DaedalusStreamElement) pop())
+						),
+				push(str.getAndClear()),
+				SEMI);
 	}
 
 	Rule StreamElement() {
-		return FirstOf(LambdaExpression(),StreamMethodCall());
+		return Sequence(
+				FirstOf(LambdaExpression(),StreamMethodCall()),
+				push(new DaedalusStreamElement((DaedalusExpression) pop()))
+				);
 	}
 
 	Rule StreamMethodCall() {
-		return Sequence(Identifier(),Optional(LPAR,StreamParam(),ZeroOrMore(COMMA,StreamParam()),RPAR));
+		Var<DaedalusStreamCall> c = new Var<>();
+		return Sequence(
+				Identifier(),
+				c.set(new DaedalusStreamCall((DaedalusName) pop())),
+				Optional(
+						push(new DaedalusStreamParameterList()),
+						LPAR,
+						StreamParam(),
+						ZeroOrMore(
+								COMMA,
+								StreamParam()
+								),
+						RPAR,
+						c.get().setParameter((DaedalusStreamParameterList) pop())
+						),
+				push(c.getAndClear())
+				);
 	}
 
 	Rule StreamParam() {
-		return FirstOf(STAR,Expression());
+		Var<DaedalusStreamParameterList> p = new Var<>();
+		return Sequence(
+					p.set((DaedalusStreamParameterList) peek()),
+					FirstOf(
+							Sequence(STAR,p.get().addParameter(null)),
+							Sequence(JoinFreeExpression(),p.get().addParameter((DaedalusExpression) pop()))
+							)
+				);
 	}
 
 

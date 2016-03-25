@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import daedalusCodeComponents.DaedalusSyntaxElement;
 import daedalusCodeComponents.generic.expression.DaedalusExpression;
+import support.Tools;
 
 public class DaedalusParameterList extends DaedalusSyntaxElement {
 	private Vector<DaedalusExpression> parameter;
@@ -19,13 +20,6 @@ public class DaedalusParameterList extends DaedalusSyntaxElement {
 	
 	@Override
 	public String toString() {
-		String out = "";
-		for(DaedalusExpression p:this.parameter) {
-			if(!out.equals("")) {
-				out+=", ";
-			}
-			out+=p;
-		}
-		return "("+out+")";
+		return Tools.list("(", ")", this.parameter);
 	}
 }
