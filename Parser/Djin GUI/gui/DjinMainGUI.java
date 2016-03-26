@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.awt.event.ActionEvent;
 import javax.swing.JTextArea;
+import java.awt.Toolkit;
 
 public class DjinMainGUI extends JFrame {
 
@@ -59,6 +60,7 @@ public class DjinMainGUI extends JFrame {
 	 * Create the frame.
 	 */
 	public DjinMainGUI() {
+		setIconImage(Toolkit.getDefaultToolkit().getImage("C:\\Users\\Dominik\\Desktop\\Programmieren\\Java\\git\\Djin\\Parser\\Icon.png"));
 		this.hasOpenFile = false;
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
