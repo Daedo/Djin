@@ -15,7 +15,6 @@ import support.Tools;
 
 public class DaedalusMain {
 
-
 	public static void main(String[] args) {
 		String path = "C:\\Users\\Dominik\\Desktop\\Dokumente\\Auﬂerschulisches\\Programmierung\\Daedalus Language\\";
 		String name = "testfile";
