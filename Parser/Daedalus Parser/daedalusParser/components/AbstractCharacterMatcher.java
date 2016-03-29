@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package daedalusParser.combonents;
+package daedalusParser.components;
 
 import org.parboiled.MatcherContext;
 import org.parboiled.matchers.CustomMatcher;

@@ -107,9 +107,9 @@ import daedalusCodeComponents.statements.stream.DaedalusStream;
 import daedalusCodeComponents.statements.stream.DaedalusStreamCall;
 import daedalusCodeComponents.statements.stream.DaedalusStreamElement;
 import daedalusCodeComponents.statements.stream.DaedalusStreamParameterList;
-import daedalusParser.combonents.LetterMatcher;
-import daedalusParser.combonents.LetterOrDigitMatcher;
-import daedalusParser.combonents.LiteralMatcher;
+import daedalusParser.components.LetterMatcher;
+import daedalusParser.components.LetterOrDigitMatcher;
+import daedalusParser.components.LiteralMatcher;
 
 
 @SuppressWarnings({"InfiniteRecursion"})

@@ -46,9 +46,9 @@ import org.parboiled.BaseParser;
 import org.parboiled.Rule;
 import org.parboiled.annotations.*;
 
-import daedalusParser.combonents.LetterMatcher;
-import daedalusParser.combonents.LetterOrDigitMatcher;
-import daedalusParser.combonents.LiteralMatcher;
+import daedalusParser.components.LetterMatcher;
+import daedalusParser.components.LetterOrDigitMatcher;
+import daedalusParser.components.LiteralMatcher;
 
 @SuppressWarnings({"InfiniteRecursion"})
 @BuildParseTree

@@ -1,4 +1,4 @@
-package daedalusParser.combonents;
+package daedalusParser.components;
 
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;

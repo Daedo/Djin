@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package daedalusParser.combonents;
+package daedalusParser.components;
 
-public class LetterMatcher extends AbstractCharacterMatcher {
+public class LetterOrDigitMatcher extends AbstractCharacterMatcher {
 
-    public LetterMatcher() {
-        super("Letter");
+    public LetterOrDigitMatcher() {
+        super("LetterOrDigit");
     }
 
     @Override
     protected boolean acceptChar(char c) {
-        return Character.isJavaIdentifierStart(c);
+        return Character.isJavaIdentifierPart(c);
     }
 }
