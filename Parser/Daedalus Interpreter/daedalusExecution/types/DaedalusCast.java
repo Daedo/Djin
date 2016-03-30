@@ -5,17 +5,17 @@ import java.util.function.Function;
 import daedalusCodeComponents.generic.type.DaedalusType;
 import daedalusExecution.intermediateObjects.DaedalusTypedValue;
 
-public class Cast {
-	private TypePair castDirection;
+public class DaedalusCast {
+	private DaedalusTypePair castDirection;
 	private Function<DaedalusTypedValue, DaedalusTypedValue> castFunction;
 	
 	//Identity
-	public Cast(DaedalusType type) {
-		this.castDirection = new TypePair(type, type);
+	public DaedalusCast(DaedalusType type) {
+		this.castDirection = new DaedalusTypePair(type, type);
 		this.castFunction = n->n;
 	}
 	
-	public TypePair getCastDirection() {
+	public DaedalusTypePair getCastDirection() {
 		return this.castDirection;
 	}
 	

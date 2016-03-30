@@ -27,6 +27,10 @@ public class DaedalusTypedValue extends DaedalusIntermediateValue{
 		return new DaedalusTypedValue(DaedalusTypeLiteral.BOOLEAN, val);
 	}
 	
+	public static DaedalusIntermediateValue createString(String val) {
+		return new DaedalusTypedValue(DaedalusTypeLiteral.STRING, val);
+	}
+	
 	public Object getValue() {
 		return this.value;
 	}
@@ -34,4 +38,6 @@ public class DaedalusTypedValue extends DaedalusIntermediateValue{
 	public DaedalusTypeLiteral getType() {
 		return this.type;
 	}
+
+
 }
