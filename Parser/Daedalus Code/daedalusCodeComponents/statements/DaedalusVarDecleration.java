@@ -8,6 +8,7 @@ import daedalusCodeComponents.generic.expression.DaedalusExpression;
 import daedalusCodeComponents.generic.type.DaedalusType;
 import daedalusExecution.exception.DaedalusException;
 import daedalusExecution.intermediateObjects.DaedalusIntermediateValue;
+import daedalusExecution.runner.DaedalusRunner;
 
 public class DaedalusVarDecleration extends DaedalusStatement {
 	Vector<DaedalusName> names;
@@ -66,12 +67,16 @@ public class DaedalusVarDecleration extends DaedalusStatement {
 			DaedalusName name = this.names.get(i);
 			Optional<DaedalusExpression> value = this.values.get(i);
 			
+			//TODO Build Correct Dimensions
+			DaedalusRunner.executionContext.declareVariable(name.getValue(), this.type);
+			
 			if(value.isPresent()) {
-				//TODO Build Correct Dimensions
 				DaedalusIntermediateValue val = value.get().resolve();
 				System.out.println("Declare: "+name+" = "+val);
+				DaedalusRunner.executionContext.setVariable(name.getValue(), val);
 			}
 		}
-		return super.resolve();
+		return null;
+		//return super.resolve();
 	}
 }

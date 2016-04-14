@@ -5,6 +5,12 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import daedalusCodeComponents.DaedalusCompilationUnit;
+import daedalusExecution.runner.DaedalusRunner;
+import daedalusParser.DaedalusMain;
+import daedalusParser.DaedalusParsingException;
 
 import java.awt.GridBagLayout;
 import javax.swing.JTextField;
@@ -65,23 +71,23 @@ public class DjinMainGUI extends JFrame {
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 1024, 768);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(contentPane);
+		this.contentPane = new JPanel();
+		this.contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(this.contentPane);
 		GridBagLayout gbl_contentPane = new GridBagLayout();
 		gbl_contentPane.columnWidths = new int[]{0, 0, 0};
 		gbl_contentPane.rowHeights = new int[]{0, 0, 0, 0};
 		gbl_contentPane.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
 		gbl_contentPane.rowWeights = new double[]{0.0, 1.0, 0.0, Double.MIN_VALUE};
-		contentPane.setLayout(gbl_contentPane);
+		this.contentPane.setLayout(gbl_contentPane);
 		
-		textField = new JLabel("Select File to Open");
+		this.textField = new JLabel("Select File to Open");
 		GridBagConstraints gbc_textField = new GridBagConstraints();
 		gbc_textField.fill = GridBagConstraints.HORIZONTAL;
 		gbc_textField.insets = new Insets(0, 0, 5, 5);
 		gbc_textField.gridx = 0;
 		gbc_textField.gridy = 0;
-		contentPane.add(textField, gbc_textField);
+		this.contentPane.add(this.textField, gbc_textField);
 		
 		JButton btnOpen = new JButton("Open");
 		btnOpen.addActionListener(new ActionListener() {
@@ -97,28 +103,28 @@ public class DjinMainGUI extends JFrame {
 		gbc_btnOpen.insets = new Insets(0, 0, 5, 0);
 		gbc_btnOpen.gridx = 1;
 		gbc_btnOpen.gridy = 0;
-		contentPane.add(btnOpen, gbc_btnOpen);
+		this.contentPane.add(btnOpen, gbc_btnOpen);
 		
-		scrollPane = new JScrollPane();
+		this.scrollPane = new JScrollPane();
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane.insets = new Insets(0, 0, 5, 5);
 		gbc_scrollPane.gridx = 0;
 		gbc_scrollPane.gridy = 1;
-		contentPane.add(scrollPane, gbc_scrollPane);
+		this.contentPane.add(this.scrollPane, gbc_scrollPane);
 		
-		textArea = new JTextArea();
-		scrollPane.setViewportView(textArea);
-		textArea.setEditable(false);
+		this.textArea = new JTextArea();
+		this.scrollPane.setViewportView(this.textArea);
+		this.textArea.setEditable(false);
 		
-		textField_1 = new JTextField();
+		this.textField_1 = new JTextField();
 		GridBagConstraints gbc_textField_1 = new GridBagConstraints();
 		gbc_textField_1.insets = new Insets(0, 0, 0, 5);
 		gbc_textField_1.fill = GridBagConstraints.HORIZONTAL;
 		gbc_textField_1.gridx = 0;
 		gbc_textField_1.gridy = 2;
-		contentPane.add(textField_1, gbc_textField_1);
-		textField_1.setColumns(10);
+		this.contentPane.add(this.textField_1, gbc_textField_1);
+		this.textField_1.setColumns(10);
 		
 		JButton btnRun = new JButton("Run");
 		btnRun.addActionListener(new ActionListener() {
@@ -129,20 +135,24 @@ public class DjinMainGUI extends JFrame {
 		GridBagConstraints gbc_btnRun = new GridBagConstraints();
 		gbc_btnRun.gridx = 1;
 		gbc_btnRun.gridy = 2;
-		contentPane.add(btnRun, gbc_btnRun);
+		this.contentPane.add(btnRun, gbc_btnRun);
 	}
 
 	public JLabel getFile() {
-		return textField;
+		return this.textField;
 	}
 	public JTextField getInput() {
-		return textField_1;
+		return this.textField_1;
 	}
 
 	private String getLoadName() {
 		JFileChooser fileChooser = new JFileChooser();
+		//TODO Remove Debug
+		fileChooser.setCurrentDirectory(new File("C:\\Users\\Dominik\\Desktop\\Dokumente\\Auﬂerschulisches\\Programmierung\\Daedalus Language\\"));
 		fileChooser.setDialogTitle("Specify a file to open");    
 
+		fileChooser.setFileFilter(new FileNameExtensionFilter("DaedalusFiles", "dae"));
+		
 		int userSelection = fileChooser.showOpenDialog(this);
 
 		if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -174,7 +184,7 @@ public class DjinMainGUI extends JFrame {
 	}
 	
 	public JTextArea getTextArea() {
-		return textArea;
+		return this.textArea;
 	}
 	
 	public boolean hasOpenFile() {
@@ -182,10 +192,21 @@ public class DjinMainGUI extends JFrame {
 	}
 
 	public void runFile() {
-		if(hasOpenFile) {
+		String[] args = ArgParser.parse(getInput().getText());
+		
+		
+		if(this.hasOpenFile) {
 			System.out.println(getInput().getText());
 			System.out.println(this.fileData);
+			try {
+				DaedalusCompilationUnit unit = DaedalusMain.parseString(this.fileData);
+				DaedalusRunner.init(unit);
+				DaedalusRunner.run(args);
+			} catch (DaedalusParsingException e) {
+				e.printStackTrace();
+			}
 			
+			System.out.println("Done");
 		} else {
 			JOptionPane.showMessageDialog(this, "Please open a file first.", "Couldn't start parsing", JOptionPane.WARNING_MESSAGE);
 		}

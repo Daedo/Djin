@@ -17,10 +17,10 @@ public class DaedalusMain {
 
 	public static void main(String[] args) {
 		String path = "C:\\Users\\Dominik\\Desktop\\Dokumente\\Außerschulisches\\Programmierung\\Daedalus Language\\";
-		String name = "testfile";
+		String name = "minifile";//"testfile";
 		String end = ".dae";
-		
-		
+
+
 		try {
 			DaedalusCompilationUnit unit = parseFile(path+name+end);
 			System.out.println(unit);
@@ -30,9 +30,6 @@ public class DaedalusMain {
 	}
 
 	public static DaedalusCompilationUnit parseFile(String fileName) throws DaedalusParsingException{
-
-		DaedalusParser parser = Parboiled.createParser(DaedalusParser.class);
-
 		String data = "";
 		try {
 			data = Files.lines(Paths.get(fileName)).map(s->s+"\n").reduce((String s1,String s2)->s1+s2).get();
@@ -40,11 +37,16 @@ public class DaedalusMain {
 			throw new DaedalusParsingException("File Error:\n"+e.getMessage());
 		}
 
+		return parseString(data);
+	}
+
+	public static DaedalusCompilationUnit parseString(String fileData) throws DaedalusParsingException {
+		DaedalusParser parser = Parboiled.createParser(DaedalusParser.class);
 		ErrorLocatingParseRunner<DaedalusSyntaxElement> runner = new ErrorLocatingParseRunner<>(parser.CompilationUnit());
-		ParsingResult<DaedalusSyntaxElement> result = runner.run(data);
+		ParsingResult<DaedalusSyntaxElement> result = runner.run(fileData);
 		if(result.hasErrors()) {
 			ParseError err = result.parseErrors.get(0);
-			throw new DaedalusParsingException(Tools.getSurrindingLinesWithNumbers(data, err.getStartIndex(), err.getEndIndex()));
+			throw new DaedalusParsingException(Tools.getSurrindingLinesWithNumbers(fileData, err.getStartIndex(), err.getEndIndex()));
 		}
 
 		if(!result.valueStack.isEmpty()) {

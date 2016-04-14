@@ -1,6 +1,8 @@
 package daedalusExecution.intermediateObjects;
 
-public abstract class DaedalusIntermediateValue {
+import daedalusExecution.runner.pointer.DaedalusCallable;
+
+public abstract class DaedalusIntermediateValue implements DaedalusCallable{
 	private DaedalusReturnLiteral state;
 	
 	protected DaedalusIntermediateValue(DaedalusReturnLiteral s) {
@@ -10,4 +12,6 @@ public abstract class DaedalusIntermediateValue {
 	public DaedalusReturnLiteral getState() {
 		return this.state;
 	}
+	
+	
 }

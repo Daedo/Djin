@@ -37,4 +37,12 @@ public class DaedalusCompilationUnit extends DaedalusSyntaxElement{
 		
 		return out;
 	}
+
+	public int statementCount() {
+		return this.statements.size();
+	}
+	
+	public DaedalusSyntaxElement getStatement(int pos) {
+		return this.statements.get(pos);
+	}
 }
